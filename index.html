@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transform - Dance Beat 126 BPM</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        
+        .container {
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .pulse {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            margin: 0 auto 30px;
+            position: relative;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.5);
+        }
+        
+        .pulse.active {
+            animation: pulse 0.2s ease-out;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                background: rgba(255, 255, 255, 0.3);
+            }
+            50% {
+                transform: scale(1.2);
+                background: rgba(255, 255, 255, 0.8);
+                box-shadow: 0 0 60px rgba(255, 255, 255, 0.9);
+            }
+            100% {
+                transform: scale(1);
+                background: rgba(255, 255, 255, 0.3);
+            }
+        }
+        
+        .transform-text {
+            font-size: 48px;
+            color: white;
+            font-weight: bold;
+            opacity: 0;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+        }
+        
+        .transform-text.show {
+            animation: showText 0.3s ease-out;
+        }
+        
+        @keyframes showText {
+            0% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1);
+            }
+        }
+        
+        .controls {
+            margin-top: 30px;
+        }
+        
+        button {
+            padding: 15px 40px;
+            font-size: 18px;
+            background: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+            margin: 0 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .beat-counter {
+            color: white;
+            font-size: 24px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="pulse" id="pulse"></div>
+        <div class="transform-text" id="transformText">TRANSFORM</div>
+        <div class="beat-counter" id="beatCounter">Beat: 1</div>
+        <div class="controls">
+            <button id="startBtn">START</button>
+            <button id="stopBtn">STOP</button>
+        </div>
+    </div>
+
+    <script>
+        // 126 BPM = 126 beats per minute
+        // 60,000 ms per minute / 126 beats = 476.19 ms per beat
+        const beatInterval = 60000 / 126;
+        let intervalId = null;
+        let beatCount = 0;
+        
+        const pulse = document.getElementById('pulse');
+        const transformText = document.getElementById('transformText');
+        const beatCounter = document.getElementById('beatCounter');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        
+        // Audio Context for generating sounds
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        // Function to create a kick drum sound
+        function playKick() {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            osc.frequency.setValueAtTime(150, audioContext.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            gain.gain.setValueAtTime(1, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            osc.start(audioContext.currentTime);
+            osc.stop(audioContext.currentTime + 0.5);
+        }
+        
+        // Function to speak "transform" with a deep voice
+        function speakTransform() {
+            const utterance = new SpeechSynthesisUtterance('transform');
+            utterance.pitch = 0.1; // Very low pitch for deep voice
+            utterance.rate = 0.9; // Slightly slower
+            utterance.volume = 1;
+            speechSynthesis.speak(utterance);
+        }
+        
+        // Function to handle each beat
+        function onBeat() {
+            beatCount++;
+            if (beatCount > 8) beatCount = 1;
+            
+            // Update beat counter display
+            beatCounter.textContent = `Beat: ${beatCount}`;
+            
+            // Pulse animation
+            pulse.classList.remove('active');
+            void pulse.offsetWidth; // Trigger reflow
+            pulse.classList.add('active');
+            
+            // Play kick drum on every beat
+            playKick();
+            
+            // On beat 5, say "transform" and show text
+            if (beatCount === 5) {
+                speakTransform();
+                transformText.classList.remove('show');
+                void transformText.offsetWidth; // Trigger reflow
+                transformText.classList.add('show');
+            }
+        }
+        
+        // Start the beat
+        startBtn.addEventListener('click', () => {
+            if (intervalId) return; // Already running
+            
+            beatCount = 0;
+            onBeat(); // Start immediately
+            intervalId = setInterval(onBeat, beatInterval);
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+        });
+        
+        // Stop the beat
+        stopBtn.addEventListener('click', () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+                beatCount = 0;
+                beatCounter.textContent = 'Beat: 1';
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+        });
+        
+        stopBtn.disabled = true;
+    </script>
+</body>
+</html>
