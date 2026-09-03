@@ -65,12 +65,38 @@
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             transition: all 0.3s;
-            margin: 0 10px;
+            margin: 5px;
         }
         
         button:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .element-controls {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .element-btn {
+            padding: 12px 30px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            border: 2px solid white;
+        }
+        
+        .element-btn.active {
+            background: white;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .element-controls h3 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 20px;
         }
     </style>
 </head>
@@ -80,6 +106,15 @@
         <div class="controls">
             <button id="startBtn">START</button>
             <button id="stopBtn">STOP</button>
+        </div>
+        <div class="element-controls">
+            <h3>Add Musical Elements</h3>
+            <button class="element-btn" id="hihatBtn">Hi-Hat</button>
+            <button class="element-btn" id="snareBtn">Snare</button>
+            <button class="element-btn" id="basslineBtn">Bassline</button>
+            <button class="element-btn" id="clapBtn">Clap</button>
+            <button class="element-btn" id="synthBtn">Synth Pad</button>
+            <button class="element-btn" id="riserBtn">Riser (16 beats)</button>
         </div>
     </div>
 
@@ -93,6 +128,16 @@
         const pulse = document.getElementById('pulse');
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
+        
+        // Element toggles
+        const elements = {
+            hihat: false,
+            snare: false,
+            bassline: false,
+            clap: false,
+            synth: false,
+            riser: false
+        };
         
         // Audio Context for generating sounds
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -115,13 +160,166 @@
             osc.stop(audioContext.currentTime + 0.5);
         }
         
+        // Function to create a hi-hat sound
+        function playHiHat() {
+            const bufferSize = audioContext.sampleRate * 0.1;
+            const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioContext.sampleRate * 0.02));
+            }
+            
+            const noise = audioContext.createBufferSource();
+            noise.buffer = buffer;
+            
+            const filter = audioContext.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.value = 7000;
+            
+            const gain = audioContext.createGain();
+            gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            noise.start(audioContext.currentTime);
+            noise.stop(audioContext.currentTime + 0.1);
+        }
+        
+        // Function to create a snare sound
+        function playSnare() {
+            const bufferSize = audioContext.sampleRate * 0.2;
+            const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioContext.sampleRate * 0.05));
+            }
+            
+            const noise = audioContext.createBufferSource();
+            noise.buffer = buffer;
+            
+            const filter = audioContext.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.value = 1000;
+            
+            const gain = audioContext.createGain();
+            gain.gain.setValueAtTime(0.5, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+            
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            noise.start(audioContext.currentTime);
+            noise.stop(audioContext.currentTime + 0.2);
+        }
+        
+        // Function to create a bassline note
+        function playBass(frequency) {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            
+            osc.type = 'sawtooth';
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            osc.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            
+            gain.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            osc.start(audioContext.currentTime);
+            osc.stop(audioContext.currentTime + 0.3);
+        }
+        
+        // Function to create a clap sound
+        function playClap() {
+            const bufferSize = audioContext.sampleRate * 0.05;
+            const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = (Math.random() * 2 - 1);
+            }
+            
+            const noise = audioContext.createBufferSource();
+            noise.buffer = buffer;
+            
+            const filter = audioContext.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = 1500;
+            
+            const gain = audioContext.createGain();
+            gain.gain.setValueAtTime(0.7, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.05);
+            
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            noise.start(audioContext.currentTime);
+            noise.stop(audioContext.currentTime + 0.05);
+        }
+        
+        // Function to create a synth pad chord
+        function playSynthPad() {
+            const frequencies = [130.81, 164.81, 196.00]; // C3, E3, G3 chord
+            
+            frequencies.forEach(freq => {
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                
+                osc.type = 'sine';
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                
+                osc.frequency.setValueAtTime(freq, audioContext.currentTime);
+                
+                gain.gain.setValueAtTime(0.05, audioContext.currentTime);
+                gain.gain.linearRampToValueAtTime(0.08, audioContext.currentTime + 0.1);
+                gain.gain.linearRampToValueAtTime(0.05, audioContext.currentTime + 0.4);
+                
+                osc.start(audioContext.currentTime);
+                osc.stop(audioContext.currentTime + 0.5);
+            });
+        }
+        
+        // Function to create a riser effect
+        function playRiser(progress) {
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const filter = audioContext.createBiquadFilter();
+            
+            osc.type = 'sawtooth';
+            filter.type = 'lowpass';
+            
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            // Frequency rises with progress
+            const startFreq = 100 + (progress * 1000);
+            osc.frequency.setValueAtTime(startFreq, audioContext.currentTime);
+            
+            // Filter opens up
+            filter.frequency.setValueAtTime(500 + (progress * 3000), audioContext.currentTime);
+            
+            gain.gain.setValueAtTime(0.1 + (progress * 0.2), audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            osc.start(audioContext.currentTime);
+            osc.stop(audioContext.currentTime + 0.1);
+        }
+        
         // Function to speak "transform" with emphasis on "FORM"
         function speakTransform() {
-            // Using phonetic spelling to get the correct pronunciation
-            // "trans" (like "an") + emphasis on "FORM"
             const utterance = new SpeechSynthesisUtterance('trans FORM');
-            utterance.pitch = 0.1; // Very low pitch for deep voice
-            utterance.rate = 0.85; // Slightly slower for emphasis
+            utterance.pitch = 0.1;
+            utterance.rate = 0.85;
             utterance.volume = 1;
             speechSynthesis.speak(utterance);
         }
@@ -129,15 +327,50 @@
         // Function to handle each beat
         function onBeat() {
             beatCount++;
-            if (beatCount > 8) beatCount = 1;
+            if (beatCount > 16) beatCount = 1;
             
             // Pulse animation
             pulse.classList.remove('active');
-            void pulse.offsetWidth; // Trigger reflow
+            void pulse.offsetWidth;
             pulse.classList.add('active');
             
-            // Play kick drum on every beat
-            playKick();
+            // Play kick drum on beats 1, 5, 9, 13 (four on the floor)
+            if (beatCount === 1 || beatCount === 5 || beatCount === 9 || beatCount === 13) {
+                playKick();
+            }
+            
+            // Hi-hat on every other beat
+            if (elements.hihat && beatCount % 2 === 0) {
+                playHiHat();
+            }
+            
+            // Snare on beats 5 and 13
+            if (elements.snare && (beatCount === 5 || beatCount === 13)) {
+                playSnare();
+            }
+            
+            // Bassline pattern (8 beat cycle)
+            if (elements.bassline) {
+                const bassPattern = [65.41, null, 65.41, null, 73.42, null, 65.41, null]; // C2, D2, C2
+                const note = bassPattern[(beatCount - 1) % 8];
+                if (note) playBass(note);
+            }
+            
+            // Clap on beats 5 and 13
+            if (elements.clap && (beatCount === 5 || beatCount === 13)) {
+                setTimeout(() => playClap(), 50); // Slightly delayed for layering
+            }
+            
+            // Synth pad every 4 beats
+            if (elements.synth && beatCount % 4 === 1) {
+                playSynthPad();
+            }
+            
+            // Riser builds over 16 beats
+            if (elements.riser) {
+                const progress = (beatCount - 1) / 16;
+                playRiser(progress);
+            }
             
             // On beat 5, say "transform"
             if (beatCount === 5) {
@@ -147,10 +380,10 @@
         
         // Start the beat
         startBtn.addEventListener('click', () => {
-            if (intervalId) return; // Already running
+            if (intervalId) return;
             
             beatCount = 0;
-            onBeat(); // Start immediately
+            onBeat();
             intervalId = setInterval(onBeat, beatInterval);
             startBtn.disabled = true;
             stopBtn.disabled = false;
@@ -165,6 +398,37 @@
                 startBtn.disabled = false;
                 stopBtn.disabled = true;
             }
+        });
+        
+        // Element button toggles
+        document.getElementById('hihatBtn').addEventListener('click', function() {
+            elements.hihat = !elements.hihat;
+            this.classList.toggle('active');
+        });
+        
+        document.getElementById('snareBtn').addEventListener('click', function() {
+            elements.snare = !elements.snare;
+            this.classList.toggle('active');
+        });
+        
+        document.getElementById('basslineBtn').addEventListener('click', function() {
+            elements.bassline = !elements.bassline;
+            this.classList.toggle('active');
+        });
+        
+        document.getElementById('clapBtn').addEventListener('click', function() {
+            elements.clap = !elements.clap;
+            this.classList.toggle('active');
+        });
+        
+        document.getElementById('synthBtn').addEventListener('click', function() {
+            elements.synth = !elements.synth;
+            this.classList.toggle('active');
+        });
+        
+        document.getElementById('riserBtn').addEventListener('click', function() {
+            elements.riser = !elements.riser;
+            this.classList.toggle('active');
         });
         
         stopBtn.disabled = true;
