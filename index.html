@@ -52,33 +52,6 @@
             }
         }
         
-        .transform-text {
-            font-size: 48px;
-            color: white;
-            font-weight: bold;
-            opacity: 0;
-            text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
-        }
-        
-        .transform-text.show {
-            animation: showText 0.3s ease-out;
-        }
-        
-        @keyframes showText {
-            0% {
-                opacity: 0;
-                transform: scale(0.5);
-            }
-            50% {
-                opacity: 1;
-                transform: scale(1.2);
-            }
-            100% {
-                opacity: 0;
-                transform: scale(1);
-            }
-        }
-        
         .controls {
             margin-top: 30px;
         }
@@ -99,19 +72,11 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
-        
-        .beat-counter {
-            color: white;
-            font-size: 24px;
-            margin-top: 20px;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="pulse" id="pulse"></div>
-        <div class="transform-text" id="transformText">TRANSFORM</div>
-        <div class="beat-counter" id="beatCounter">Beat: 1</div>
         <div class="controls">
             <button id="startBtn">START</button>
             <button id="stopBtn">STOP</button>
@@ -126,8 +91,6 @@
         let beatCount = 0;
         
         const pulse = document.getElementById('pulse');
-        const transformText = document.getElementById('transformText');
-        const beatCounter = document.getElementById('beatCounter');
         const startBtn = document.getElementById('startBtn');
         const stopBtn = document.getElementById('stopBtn');
         
@@ -152,11 +115,13 @@
             osc.stop(audioContext.currentTime + 0.5);
         }
         
-        // Function to speak "transform" with a deep voice
+        // Function to speak "transform" with emphasis on "FORM"
         function speakTransform() {
-            const utterance = new SpeechSynthesisUtterance('transform');
+            // Using phonetic spelling to get the correct pronunciation
+            // "trans" (like "an") + emphasis on "FORM"
+            const utterance = new SpeechSynthesisUtterance('trans FORM');
             utterance.pitch = 0.1; // Very low pitch for deep voice
-            utterance.rate = 0.9; // Slightly slower
+            utterance.rate = 0.85; // Slightly slower for emphasis
             utterance.volume = 1;
             speechSynthesis.speak(utterance);
         }
@@ -166,9 +131,6 @@
             beatCount++;
             if (beatCount > 8) beatCount = 1;
             
-            // Update beat counter display
-            beatCounter.textContent = `Beat: ${beatCount}`;
-            
             // Pulse animation
             pulse.classList.remove('active');
             void pulse.offsetWidth; // Trigger reflow
@@ -177,12 +139,9 @@
             // Play kick drum on every beat
             playKick();
             
-            // On beat 5, say "transform" and show text
+            // On beat 5, say "transform"
             if (beatCount === 5) {
                 speakTransform();
-                transformText.classList.remove('show');
-                void transformText.offsetWidth; // Trigger reflow
-                transformText.classList.add('show');
             }
         }
         
@@ -203,7 +162,6 @@
                 clearInterval(intervalId);
                 intervalId = null;
                 beatCount = 0;
-                beatCounter.textContent = 'Beat: 1';
                 startBtn.disabled = false;
                 stopBtn.disabled = true;
             }
